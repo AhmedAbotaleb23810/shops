@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>تطبيق بيع المنتجات - لوحة تحكم البائع</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      direction: rtl;
+      padding: 20px;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      text-align: center;
+      color: #34495e;
+      margin-bottom: 25px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      width: 100%;
+      max-width: 900px;
+    }
+    input, select, button {
+      padding: 12px 15px;
+      font-size: 16px;
+      border: 1.8px solid #ccc;
+      border-radius: 8px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2980b9;
+      box-shadow: 0 0 8px rgba(41, 128, 185, 0.5);
+    }
+    button {
+      cursor: pointer;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease, transform 0.15s ease;
+    }
+    button:hover {
+      background-color: #1c5980;
+      transform: scale(1.05);
+    }
+    #clearAll {
+      background-color: #c0392b;
+      margin-left: auto;
+      transition: background-color 0.3s ease;
+    }
+    #clearAll:hover {
+      background-color: #8e2817;
+    }
+    #search {
+      width: 100%;
+      max-width: 400px;
+    }
+    select {
+      min-width: 140px;
+    }
+    table {
+      width: 100%;
+      max-width: 900px;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 15px 18px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+    }
+    th {
+      background-color: #2980b9;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+    }
+    th:hover {
+      background-color: #1c5980;
+    }
+    tr:hover:not(.editing) {
+      background-color: #f5faff;
+    }
+    .actions button {
+      margin: 0 4px;
+      padding: 7px 14px;
+      font-size: 14px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .actions button:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .actions button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .editInput {
+      width: 90%;
+      padding: 8px 10px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1.5px solid #ccc;
+    }
+    .saveBtn, .cancelBtn {
+      padding: 7px 15px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+    .saveBtn {
+      background-color: #27ae60;
+      color: white;
+    }
+    .saveBtn:hover {
+      background-color: #1e8449;
+    }
+    .cancelBtn {
+      background-color: #c0392b;
+      color: white;
+    }
+    .cancelBtn:hover {
+      background-color: #8e2817;
+    }
+    #totalValue {
+      margin-top: 20px;
+      font-weight: 700;
+      font-size: 20px;
+      color: #27ae60;
+      text-align: center;
+      max-width: 900px;
+    }
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-weight: 700;
+      color: #27ae60;
+      display: none;
+    }
+
+    /* Responsive for smaller screens */
+    @media (max-width: 700px) {
+      .input-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      input, select, button {
+        width: 100% !important;
+        margin: 5px 0;
+      }
+      table, #totalValue {
+        max-width: 100%;
+        font-size: 14px;
+      }
+      .actions button {
+        padding: 5px 10px;
+        font-size: 12px;
+        margin: 0 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  // تحقق من تسجيل الدخول
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!loggedInUser) {
+    window.location.href = "login.html";
+  }
+</script>
+
+<h1>🛍️ تطبيق بيع المنتجات - لوحة تحكم البائع</h1>
+
+<div class="input-group">
+  <input id="name" placeholder="اسم المنتج" />
+  <input id="price" placeholder="السعر" type="number" min="0" step="0.01" />
+  <input id="quantity" placeholder="الكمية" type="number" min="0" step="1" />
+  <button onclick="addProduct()">➕ إضافة</button>
+  <button id="clearAll" onclick="clearAllProducts()">🧹 مسح الكل</button>
+</div>
+
+<div class="input-group" style="justify-content: center; margin-bottom: 10px;">
+  <input id="search" placeholder="🔍 بحث عن منتج" oninput="renderProducts()" />
+  <select id="sortBy" onchange="renderProducts()">
+    <option value="">-- فرز حسب --</option>
+    <option value="name">الاسم</option>
+    <option value="price">السعر</option>
+    <option value="quantity">الكمية</option>
+  </select>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th onclick="sortProducts('name')">اسم المنتج</th>
+      <th onclick="sortProducts('price')">السعر</th>
+      <th onclick="sortProducts('quantity')">الكمية</th>
+      <th>الخيارات</th>
+    </tr>
+  </thead>
+  <tbody id="productTable"></tbody>
+</table>
+
+<div id="totalValue">إجمالي قيمة المخزون: 0.00 ريال</div>
+
+<div class="message" id="messageBox"></div>
+
+<script>
+  let products = JSON.parse(localStorage.getItem("products") || "[]");
+  let sortDirection = { name: 'asc', price: 'asc', quantity: 'asc' };
+  let editingIndex = null;
+
+  function showMessage(msg, duration = 2500) {
+    const messageBox = document.getElementById("messageBox");
+    messageBox.textContent = msg;
+    messageBox.style.display = "block";
+    setTimeout(() => {
+      messageBox.style.display = "none";
+    }, duration);
+  }
+
+  function saveProducts() {
+    localStorage.setItem("products", JSON.stringify(products));
+  }
+
+  function addProduct() {
+    const name = document.getElementById("name").value.trim();
+    const price = parseFloat(document.getElementById("price").value);
+    const quantity = parseInt(document.getElementById("quantity").value);
+
+    if (!name || isNaN(price) || isNaN(quantity) || price < 0 || quantity < 0) {
+      alert("يرجى إدخال كل البيانات بشكل صحيح (السعر والكمية يجب أن يكونا أعداداً موجبة)");
+      return;
+    }
+
+    products.push({ name, price, quantity });
+    saveProducts();
+    renderProducts();
+    showMessage(`✅ تمت إضافة المنتج "${name}" بنجاح`);
+
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("quantity").value = "";
+  }
+
+  function buyProduct(index) {
+    if (products[index].quantity > 0) {
+      products[index].quantity--;
+      saveProducts();
+      renderProducts();
+      showMessage(`🛒 تم شراء وحدة من "${products[index].name}"`);
+    } else {
+      alert("⚠️ الكمية غير متوفرة");
+    }
+  }
+
+  function deleteProduct(index) {
+    if (confirm("هل أنت متأكد من حذف المنتج؟")) {
+      const deletedName = products[index].name;
+      products.splice(index, 1);
+      saveProducts();
+      renderProducts();
+      showMessage(`🗑️ تم حذف المنتج "${deletedName}"`);
+    }
+  }
+
+  function clearAllProducts() {
+    if (products.length === 0) {
+      alert("لا توجد منتجات لمسحها");
+      return;
+    }
+    if (confirm("هل تريد مسح كل المنتجات؟")) {
+      products = [];
+      saveProducts();
+      renderProducts();
+      showMessage("🧹 تم مسح جميع المنتجات");
+    }
+  }
+
+  function editProduct(index) {
+    if (editingIndex !== null) {
+      alert("🔔 يرجى إنهاء التعديل الحالي أولاً");
+      return;
+    }
+    editingIndex = index;
+    renderProducts();
+  }
+
+  function saveEdit(index) {
+    const nameInput = document.getElementById("editName");
+    const priceInput = document.getElementById("editPrice");
+    const quantityInput = document.getElementById("editQuantity");
+
+    const newName = nameInput.value.trim();
+    const newPrice = parseFloat(priceInput.value);
+    const newQuantity = parseInt(quantityInput.value);
+
+    if (!newName || isNaN(newPrice) || isNaN(newQuantity) || newPrice < 0 || newQuantity < 0) {
+      alert("يرجى إدخال بيانات صحيحة أثناء التعديل");
+      return;
+    }
+
+    products[index] = { name: newName, price: newPrice, quantity: newQuantity };
+    editingIndex = null;
+    saveProducts();
+    renderProducts();
+    showMessage(`✏️ تم تعديل المنتج "${newName}"`);
+  }
+
+  function cancelEdit() {
+    editingIndex = null;
+    renderProducts();
+  }
+
+  function sortProducts(key) {
+    if (!key) return;
+    let direction = sortDirection[key];
+    products.sort((a, b) => {
+      if (key === "name") {
+        return direction === "asc"
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      } else {
+        return direction === "asc" ? a[key] - b[key] : b[key] - a[key];
+      }
+    });
+    sortDirection[key] = direction === "asc" ? "desc" : "asc";
+    renderProducts();
+  }
+
+  function renderProducts() {
+    const tbody = document.getElementById("productTable");
+    tbody.innerHTML = "";
+
+    const search = document.getElementById("search").value.trim().toLowerCase();
+    const sortBy = document.getElementById("sortBy").value;
+
+    let filtered = products.filter(p => p.name.toLowerCase().includes(search));
+
+    if (sortBy) {
+      let dir = sortDirection[sortBy];
+      filtered.sort((a, b) => {
+        if (sortBy === "name") {
+          return dir === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        } else {
+          return dir === "asc" ? a[sortBy] - b[sortBy] : b[sortBy] - a[sortBy];
+        }
+      });
+    }
+
+    filtered.forEach((product, index) => {
+      const realIndex = products.indexOf(product);
+      const tr = document.createElement("tr");
+      if (editingIndex === realIndex) {
+        tr.classList.add("editing");
+        tr.innerHTML = `
+          <td><input id="editName" class="editInput" value="${product.name}" /></td>
+          <td><input id="editPrice" class="editInput" type="number" min="0" step="0.01" value="${product.price}" /></td>
+          <td><input id="editQuantity" class="editInput" type="number" min="0" step="1" value="${product.quantity}" /></td>
+          <td class="actions">
+            <button class="saveBtn" onclick="saveEdit(${realIndex})">حفظ</button>
+            <button class="cancelBtn" onclick="cancelEdit()">إلغاء</button>
+          </td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td>${product.name}</td>
+          <td>${product.price.toFixed(2)}</td>
+          <td>${product.quantity}</td>
+          <td class="actions">
+            <button onclick="buyProduct(${realIndex})" ${product.quantity === 0 ? 'disabled' : ''}>شراء</button>
+            <button onclick="editProduct(${realIndex})">تعديل</button>
+            <button onclick="deleteProduct(${realIndex})">حذف</button>
+          </td>
+        `;
+      }
+      tbody.appendChild(tr);
+    });
+
+    updateTotalValue();
+  }
+
+  function updateTotalValue() {
+    const total = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
+    document.getElementById("totalValue").textContent = `إجمالي قيمة المخزون: ${total.toFixed(2)} ريال`;
+  }
+
+  renderProducts();
+</script>
+
+</body>
+</html>
