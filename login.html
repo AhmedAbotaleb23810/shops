@@ -1,145 +1,151 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <title>تطبيق تسجيل الدخول</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #e0f7fa, #e0f2f1);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .app-container {
-      background-color: #fff;
-      padding: 40px 30px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
-
-    .app-container h1 {
-      margin-bottom: 25px;
-      color: #2c3e50;
-      font-size: 24px;
-    }
-
-    .logo {
-      font-size: 48px;
-      margin-bottom: 10px;
-      color: #26a69a;
-    }
-
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      transition: border 0.3s ease;
-    }
-
-    input:focus {
-      border-color: #26a69a;
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #26a69a;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #1e8e81;
-    }
-
-    p {
-      margin-top: 20px;
-      font-size: 14px;
-    }
-
-    a {
-      color: #26a69a;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .error {
-      color: red;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 500px) {
-      .app-container {
-        padding: 30px 20px;
-      }
-
-      .app-container h1 {
-        font-size: 20px;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>تطبيق بيع المنتجات - المشتري</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4f8;
+  direction: rtl;
+  padding: 20px;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 {
+  text-align: center;
+  color: #34495e;
+  margin-bottom: 25px;
+  font-weight: 700;
+}
+#search {
+  padding: 12px 15px;
+  font-size: 16px;
+  border: 1.8px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+table {
+  width: 100%;
+  max-width: 900px;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+th, td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+}
+th {
+  background-color: #2980b9;
+  color: white;
+  font-weight: 600;
+}
+tr:hover {
+  background-color: #f5faff;
+}
+button {
+  padding: 7px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #27ae60;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+button:hover:not(:disabled) {
+  background-color: #1e8449;
+}
+</style>
 </head>
 <body>
-  <div class="app-container">
-    <div class="logo">🔐</div>
-    <h1>تسجيل الدخول إلى التطبيق</h1>
 
-    <input type="text" id="username" placeholder="اسم المستخدم" />
-    <input type="password" id="password" placeholder="كلمة المرور" />
-    <button onclick="login()">دخول</button>
+<h1>🛍️ قائمة المنتجات</h1>
+<input id="search" placeholder="🔍 بحث عن منتج" oninput="renderProducts()" />
 
-    <p>ليس لديك حساب؟ <a href="register.html">سجل الآن</a></p>
-    <p class="error" id="errorMsg"></p>
-  </div>
+<table>
+<thead>
+<tr>
+  <th>اسم المنتج</th>
+  <th>السعر</th>
+  <th>الكمية</th>
+  <th>شراء</th>
+</tr>
+</thead>
+<tbody id="productTable"></tbody>
+</table>
 
-  <script>
-    function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
-      const errorMsg = document.getElementById("errorMsg");
-      errorMsg.textContent = "";
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-      if (!username || !password) {
-        errorMsg.textContent = "يرجى إدخال اسم المستخدم وكلمة المرور.";
-        return;
-      }
+<script>
+// ضع بيانات مشروعك هنا
+const firebaseConfig = {
+  apiKey: "PUT_YOUR_KEY_HERE",
+  authDomain: "PUT_YOUR_AUTH_DOMAIN",
+  databaseURL: "https://appjx-d8c22-default-rtdb.firebaseio.com",
+  projectId: "PUT_YOUR_PROJECT_ID",
+  storageBucket: "PUT_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "PUT_YOUR_SENDER_ID",
+  appId: "PUT_YOUR_APP_ID"
+};
 
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const user = users.find(u => u.username === username && u.password === password);
+// تهيئة Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const productsRef = db.ref("products");
 
-      if (!user) {
-        errorMsg.textContent = "اسم المستخدم أو كلمة المرور غير صحيحة.";
-        return;
-      }
+let products = [];
 
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
-      window.location.href = "buyer.html"; // أو أي صفحة رئيسية للتطبيق
-    }
-  </script>
+productsRef.on("value", snapshot => {
+  products = [];
+  snapshot.forEach(childSnapshot => {
+    products.push({ id: childSnapshot.key, ...childSnapshot.val() });
+  });
+  renderProducts();
+});
+
+function renderProducts() {
+  const search = document.getElementById("search").value.trim().toLowerCase();
+  const tbody = document.getElementById("productTable");
+  tbody.innerHTML = "";
+
+  products
+    .filter(p => p.name.toLowerCase().includes(search))
+    .forEach(product => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${product.name}</td>
+        <td>${product.price.toFixed(2)}</td>
+        <td>${product.quantity}</td>
+        <td>
+          <button ${product.quantity === 0 ? "disabled" : ""} onclick="buyProduct('${product.id}', ${product.quantity})">شراء</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
+function buyProduct(id, quantity) {
+  if (quantity > 0) {
+    db.ref("products/" + id).update({ quantity: quantity - 1 });
+  }
+}
+</script>
+
 </body>
 </html>
